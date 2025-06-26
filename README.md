@@ -73,8 +73,8 @@ streamlit run app.py
 
 ### 🐳 Option 2: Docker
 ```bash
-docker pull your-docker-image
-docker run -p 8501:8501 your-docker-image
+docker build -t tradescope .
+docker-compose up -d
 ```
 
 ---
@@ -88,7 +88,7 @@ docker run -p 8501:8501 your-docker-image
    ```
 2. Run the container:
    ```bash
-   docker run -p 8501:8501 tradescope
+   docker-compose up -d
    ```
 3. Access the app:
    - Open a browser and go to `http://localhost:8501`
