@@ -6,6 +6,9 @@ import seaborn as sns
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
+import yfinance as yf
+from datetime import datetime, timedelta
+import time
 
 class TradingAlgorithm:
     def __init__(self):
@@ -82,11 +85,31 @@ def plot_prediction_distribution(y_pred):
     ax2.set_title("Trade Signal Distribution")
     st.pyplot(fig2)
 
+def fetch_yfinance_data(ticker):
+    try:
+        df = yf.download(ticker, period='1d', interval='1m')
+        df = df.reset_index()
+        df.rename(columns={
+            'Open': 'open',
+            'High': 'pHigh',
+            'Low': 'pLow',
+            'Close': 'pClose',
+        }, inplace=True)
+        df['pOpen'] = df['open'].shift(1)
+        df['pMean'] = (df['pHigh'] + df['pLow']) / 2
+        return df.dropna()
+    except Exception as e:
+        return None
+
 def main():
     st.set_page_config(page_title="Trading Signal Dashboard", layout="wide")
     with st.sidebar:
         st.title("⚙️ Settings")
         uploaded_file = st.file_uploader("📂 Upload CSV", type="csv")
+        st.markdown("---")
+        st.markdown("### 📡 Live Market Data")
+        live_ticker = st.text_input("Search Ticker (e.g. AAPL, MSFT, TSLA)")
+        show_live = st.checkbox("Enable Live Market Predictions")
 
     st.title("📈 Trading Intelligence Dashboard")
     algo = TradingAlgorithm()
@@ -94,7 +117,6 @@ def main():
     if uploaded_file:
         try:
             data = pd.read_csv(uploaded_file)
-
             with st.expander("🔍 Raw Data Preview", expanded=False):
                 st.dataframe(data.head(), use_container_width=True)
 
@@ -106,7 +128,6 @@ def main():
             accuracy = report['accuracy'] * 100
             precision = report['weighted avg']['precision'] * 100
             recall = report['weighted avg']['recall'] * 100
-
             col1, col2, col3 = st.columns(3)
             col1.metric("Accuracy", f"{accuracy:.1f}%")
             col2.metric("Precision", f"{precision:.1f}%")
@@ -128,17 +149,30 @@ def main():
                 colA.metric("Direction", signal["trade_direction"])
                 colB.metric("Entry Price", signal["entry_price"])
                 colC.metric("Confidence %", f"{signal['confidence_score']}%")
-
-                st.markdown("---")
                 colX, colY = st.columns(2)
                 colX.metric("Stop Loss", signal["stop_loss"])
                 colY.metric("Take Profit", signal["take_profit"])
-
                 with st.expander("🧠 Trade Rationale"):
                     st.markdown(f"> {signal['rationale']}")
 
         except Exception as e:
             st.error(f"❌ Error: {e}")
+
+    if show_live and live_ticker:
+        st.markdown("---")
+        st.subheader(f"📡 Live Market Feed: {live_ticker.upper()}")
+        df_live = fetch_yfinance_data(live_ticker)
+
+        if df_live is not None and not df_live.empty:
+            st.line_chart(df_live.set_index("Datetime")["pClose"].tail(60))
+            if algo.trained:
+                signal = algo.generate_trade_signal(df_live.iloc[-1])
+                if "error" in signal:
+                    st.error(signal["error"])
+                else:
+                    st.success(f"Live Signal: {signal['trade_direction']} @ {signal['entry_price']} ({signal['confidence_score']}% confidence)")
+        else:
+            st.warning("No live data found or failed to fetch from API.")
 
 if __name__ == "__main__":
     main()
