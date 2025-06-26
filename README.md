@@ -3,6 +3,13 @@
 **TradeScope** is a real-time machine learning-based trading signal system that analyzes historical price data to generate precise and explainable trade recommendations. Built with **Streamlit**, it offers an intuitive dashboard to visualize trade signals, model performance, and evaluate new market data.
 
 ---
+## 🚀 New Features Implemented 
+
+- 📡 Real-Time Market Data: Added a yfinance API integration Users can enter ticker symbols like AAPL, MSFT, TSLA
+- 🧠 Live Signal Prediction: When model is trained and live feed is enabled, last row of live data is used to predict a signal in real-time
+- 🔁 📊 Stock Chart: Line chart showing last 60 minutes of price data from live feed
+- 🧠 🔒 Conditional Visibility: Live data, charts, and signal predictions only appear if the ticker and model are both valid No unnecessary output if no API/ticker is used
+- 🎯 Save live trade log
 
 ## 🚀 Features
 
